@@ -1,0 +1,66 @@
+version: '3.4'
+
+services:
+    # DB
+    mongo:
+        image: mongo
+        restart: always
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: root
+            MONGO_INITDB_ROOT_PASSWORD: root
+
+    mongo-express:
+        image: mongo-express
+        restart: always
+        ports:
+            - 8081:8081
+        environment:
+            ME_CONFIG_MONGODB_ADMINUSERNAME: root
+            ME_CONFIG_MONGODB_ADMINPASSWORD: root
+            ME_CONFIG_MONGODB_URL: mongodb://root:root@mongo:27017/
+
+    # Services
+    rabbitmq:
+        container_name: rabbitmq
+        image: rabbitmq:3.10-management
+        ports:
+            - 1081:15672
+            - 5672:5672
+
+    seq:
+        container_name: seq
+        image: datalust/seq
+        environment:
+            ACCEPT_EULA: "Y"
+        ports:
+            - 1080:80
+            - 5341:5341
+
+    # Api
+    api:
+        container_name: api
+        image: ${DOCKER_REGISTRY-}brpservicesapiperson
+        build:
+            context: .
+            dockerfile: BRP.Services.API.Person/Dockerfile
+        ports:
+            - 5000:80
+            
+    # Services Consumer and Publish
+    api_consumer:
+        container_name: api_consumer
+        image: ${DOCKER_REGISTRY-}brpservicesconsumermasstransitgeneric
+        build:
+            context: .
+            dockerfile: BRP.Services.Consumer.MassTransit.Generic/Dockerfile
+        ports:
+            - 5001:80
+
+    api_publish:
+        container_name: api_publish
+        image: ${DOCKER_REGISTRY-}brpservicespublishmasstransitgeneric
+        build:
+            context: .
+            dockerfile: BRP.Services.Publish.MassTransit.Generic/Dockerfile
+        ports:
+            - 5002:80
